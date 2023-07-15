@@ -30,7 +30,7 @@ Hipster ShopHipster Shop
   ```
   kubectl run frontend --image d1manxoloda/hipster-shop:otus --restart=Never --dry-run -o yaml > frontend-pod.yaml
   ```
-Hipster Shop | Задание со ⭐
+Hipster Shop | Задание со *
 - Под frontend находится в статусе Error, из-за отсутствия env:
   ```
   panic: environment variable "PRODUCT_CATALOG_SERVICE_ADDR" not set
@@ -43,3 +43,69 @@ Hipster Shop | Задание со ⭐
   ```
 - Создан новый манифест frontend-pod-healthy.yaml, с указанием env.
 - Запущенный с манифеста frontend-pod-healthy.yaml, под frontend находится в статусе Running.
+
+## Домашнее задание №2
+
+## В процессе сделано:
+  - Пункт 1
+1. Был создан первый манифест ReplicaSet **frontend-replicaset.yaml** из методички HW2
+  
+   1. Были исправлены ошибки в манифесте. Добавлена секция selector. 
+   2. В манифест добавлены переменные (env), которые необходимы подам для работоспособности.
+   3. Через команду  `kubectl apply -f frontend-replicaset.yaml` запустили репликасет. Убедились что поднялась одна реплика пода **frontend** командой `kubectl get rs frontend`
+      ```
+      kubectl get rs frontend
+      NAME       DESIRED   CURRENT   READY   AGE
+      frontend   1         1         1       46s
+      ```
+   4. Изменили количество реплик с 1 на 3 через команду `kubectl scale replicaset frontend --replicas=3`. Убедились, что количество реплик пода **frontend** изменилось на 3 командой `kubectl get rs frontend` 
+      ```
+      kubectl get rs frontend
+      NAME       DESIRED   CURRENT   READY   AGE
+      frontend   3         3         3       46s
+      ```
+   5. С помощью команды  `kubectl delete pods -l app=frontend | kubectl get pods -l app=frontend -w` убедились, что репликасет отслеживает изменения состояний подов и поднимает новые реплики. В нашем случае они были специально удалены.
+      ```
+      kubectl delete pods -l app=frontend | kubectl get pods -l app=frontend -w
+      NAME             READY   STATUS              RESTARTS   AGE
+      frontend-g4df2   0/1     ContainerCreating   0          3s
+      frontend-92kls   0/1     ContainerCreating   0          3s
+      frontend-2dsp4   0/1     ContainerCreating   0          3s
+      frontend-2dsp4   1/1     Running             0          4s
+      frontend-g4df2   1/1     Running             0          4s
+      frontend-92kls   1/1     Running             0          5s
+      ```
+   6. Изменен манифест, чтобы сразу поднималось 3 реплики пода.
+   7. Изменена версия образа с которого репликасет поднимает под. После применения манифеста командой `kubectl get replicaset frontend -o=jsonpath='{.spec.template.spec.containers[0].image}'` убеждаемся что образ с которого будут создаваться реплики подов изменился на указанную нами в манифесте версию
+   8. Добавлены deployment манифесты для paymentservice.
+   9. Добавлен Probes для frontend
+
+
+- Пункт 2
+1. Добавлены deployment манифесты для paymentservice с двумя стратегиями
+   1. Аналог blue-green:
+      ```
+      spec:
+         strategy:
+           type: RollingUpdate
+           rollingUpdate:
+             maxSurge: 0
+             maxUnavailable: 1
+      ```
+   2. Reverse Rolling Update:
+      ```
+      spec:
+         strategy:
+           type: RollingUpdate
+           rollingUpdate:
+             maxSurge: 3
+             maxUnavailable: 0
+      ```
+2 Добавлен node-exporter-daemonset.yaml.
+     ```
+      spec:
+        tolerations:
+          - key: node-role.kubernetes.io/master
+            operator: Exists
+            effect: NoSchedule
+     ```
