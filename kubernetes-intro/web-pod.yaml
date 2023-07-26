@@ -8,6 +8,13 @@ spec:
   containers:
   - name: web
     image: d1manxoloda/mynginx:otus
+    readinessProbe:
+      httpGet:
+        path: /index.html
+        port: 80
+    livenessProbe:
+      tcpSocket:
+        port: 8000
     resources: {}
     volumeMounts:
     - name: app
