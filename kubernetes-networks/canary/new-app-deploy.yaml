@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: new-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: new-app
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      name: new-app
+      labels:
+        app: new-app
+    spec:
+      containers:
+      - name: nginx
+        image: d1manxoloda/mynginx:otus
+        readinessProbe:
+          httpGet:
+            path: /index.html
+            port: 8000
+        livenessProbe:
+          tcpSocket:
+            port: 8000
+        volumeMounts:
+        - name: app
+          mountPath: /app
+      initContainers:
+      - name: busybox
+        image: busybox:1.31
+        command: ['sh', '-c', 'wget -O- https://tinyurl.com/otus-k8s-intro | sh']
+        volumeMounts:
+        - name: app
+          mountPath: /app
+      volumes:
+      - name: app
+        emptyDir: {}
